@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Lock files
+package-lock.json
+yarn.lock
+
+# Build artifacts
+build/
+dist/
+
+# IDE-specific files
+.vscode/
+.idea/
+
+# Test coverage reports
+coverage/*.{txt,json,html}
+
+# Temporary files
+tmp/
+*.tmp
+
+# Log files
+*.log
+
+# Locally-specific configuration files
+.prettierrc
+.eslintrc
+.editorconfig
+
+# Environment variables
+.env*  # Matches all files starting with .env (e.g., .env, .env.development, .env.production)
+
+# Editor drafts and back-ups (optional)
+*.swp
+*.swo
