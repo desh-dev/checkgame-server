@@ -318,25 +318,6 @@ export interface SocketIOInstance extends SocketIOServer {
             }
             return null; // No matching player found yet
           }
-          function findSocketByRoom(roomName: string): string | undefined {
-            for (const [id, socket] of Object.entries(io.sockets.sockets)) {
-              if (socket.rooms.has(roomName)) {
-                return id;
-              }
-            }
-            return undefined;
-          }
-          function getConnectedSockets(roomName: string): Socket | undefined {
-            const connectedSockets = io.sockets.sockets;
-            for (const socketId in connectedSockets) {
-              const socket = connectedSockets.get(socketId);
-              if (socket?.rooms.has(roomName)) {
-                return socket;
-              }
-            }
-            return undefined;
-          }
-
         return io
 
   }

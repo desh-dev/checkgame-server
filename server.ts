@@ -8,7 +8,6 @@ import app from "./app";
 var debug = require("debug")("socketio-server:server");
 import * as http from "http";
 import { SocketIOInstance, createSocketIOServer } from "./socket.io";
-import path from "path";
 
 
 

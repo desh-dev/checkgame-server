@@ -3,10 +3,9 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
-const credentials = require("./middleware/credentials");
 import cors from "cors";
 import { NextFunction, Response, Request } from "express";
-import corsOptions from "./config/corsOptions";
+import allowedOrigins from "./config/allowedOrigins";
 
 var paymentRouter = require("./routes/payment");
 
@@ -17,16 +16,21 @@ var app = express();
  app.set('view engine', 'jade');
 
 app.use(logger("dev"));
-//app.use(credentials);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-app.use(cors(corsOptions));
-
-
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const message = 'The CORS policy for this origin is not enabled.';
+      return callback(new Error(message), false);
+    }
+    callback(null, true);
+  }
+}));
 app.use("/request-to-pay", paymentRouter);
-
 
 // catch 404 and forward to error handler
 app.use(function (req: Request, res: Response, next: NextFunction) {
