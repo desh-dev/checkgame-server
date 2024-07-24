@@ -8,21 +8,23 @@ export interface SocketIOInstance extends SocketIOServer {
   interface Player {
     id: string;
     username: string;
+    userId: string;
     gameMode?: string; // Optional property
     timeout?: NodeJS.Timeout; // Optional property to store timeout ID
   }
   interface Room {
     owner: string;
+    userId: string;
     gameMode: string;
     roomName: string;
   }
   
   export const createSocketIOServer = (httpServer: http.Server, options? : Object): SocketIOServer => {
     const io = new SocketIOServer(httpServer, options);
-    const rooms: { [key: string]: Room } = {};
-    const players: { [key: string]: Player } = {};
+    const rooms: { [key: string]: Room } = {}; //stores jambo rooms
+    const players: { [key: string]: Player } = {}; //stores players for jambo standard
     const userId: string[] = [];
-    const opponents: { [roomId: string]: {opponent: string, stake: number |null} } = {};
+    const opponents: { [roomId: string]: {id: string, opponent: string, stake: number |null} } = {};
     const playAgainUsers: { [roomId: string]: string[] } = {};
     io.on("connection", (socket: Socket) => {
         socket.on("create_room", ({id, roomId, opponent1, stake}) => {
@@ -46,8 +48,9 @@ export interface SocketIOInstance extends SocketIOServer {
             console.log("New User joining room: ", roomId);
             userId.push(id);
             if (!opponents[roomId]) {
-                opponents[roomId] = { opponent: "", stake: null }; // Initialize opponents[roomId] if it doesn"t exist
+                opponents[roomId] = { id: "", opponent: "", stake: null }; // Initialize opponents[roomId] if it doesn"t exist
             }
+            opponents[roomId].id = id;
             opponents[roomId].opponent = opponent1;
             stake && (opponents[roomId].stake = stake);
 
@@ -93,6 +96,7 @@ export interface SocketIOInstance extends SocketIOServer {
                             socket.join(roomId);
                             userId.push(id);
                             const opponent1 = opponents[roomId].opponent;
+                            const opponent1Id = opponents[roomId].id;
                             playAgainUsers[roomId] = [];
                             console.log(opponent1)
                             socket.emit("room_joined", {player:"player2", opponent1});
@@ -100,7 +104,7 @@ export interface SocketIOInstance extends SocketIOServer {
                             if (io.sockets.adapter.rooms.get(roomId)?.size === 2){
                                 io.to(roomId).emit("room_full");
                                 socket.to(roomId).emit("opponent", {opponent2});
-                                console.log(opponent2)
+                                socket.to(roomId).emit("register_match", ({userIdOne: opponent1Id, userIdTwo: id, stake: opponents[roomId].stake}));
                             }
                             console.log("New User joining room: ", roomId);
                         })
@@ -203,11 +207,11 @@ export interface SocketIOInstance extends SocketIOServer {
             const username = data.username; // Access username from event data
             console.log(gameMode, username);
 
-            players[socket.id] = { id: socket.id, username, gameMode }; // Store player data with username
+            players[socket.id] = { id: socket.id, username, userId: id, gameMode }; // Store player data with username, gameMode refers to stake
             userId.push(id);
             const timeoutId = setTimeout(() => {
                 // No matching player found within 30 seconds, emit error
-                console.log("No matching player found within 20 seconds");
+                console.log("No matching player found within 30 seconds");
                 socket.emit("error", { message: "No players available. Please try again later." });
                 delete players[socket.id]; // Remove player from the object after timeout
                 userId.splice(userId.indexOf(id), 1);
@@ -223,6 +227,8 @@ export interface SocketIOInstance extends SocketIOServer {
                 const player2 = potentialMatch;
                 const player1Username = players[player1].username;
                 const player2Username = players[player2].username;
+                const userIdOne = players[player1].userId;
+                const userIdTwo = players[player2].userId;
 
                 players[player1].timeout && clearTimeout(players[player1].timeout as NodeJS.Timeout);
                 players[player2].timeout && clearTimeout(players[player2].timeout as NodeJS.Timeout);
@@ -236,7 +242,16 @@ export interface SocketIOInstance extends SocketIOServer {
                 player2Socket.join(roomName);
                 }              
             // Send game start message with usernames to both players
-              io.to(roomName).emit("game_start", { player1Id: player1, player2Id: player2, roomName, player1Username, player2Username });
+                io.to(roomName).emit("game_start", {
+                    player1Id: player1,
+                    player2Id: player2,
+                    roomName,
+                    player1Username,
+                    player2Username,
+                    // userIdOne,
+                    // userIdTwo
+                });
+                socket.to(roomName).emit("register_match", {userIdOne, userIdTwo, stake: gameMode});
         
               // Handle game logic within the game room (e.g., sending moves, updating game state)
               // ...
@@ -254,7 +269,7 @@ export interface SocketIOInstance extends SocketIOServer {
                 delete players[playerId];
             }
           });
-          socket.on("create_jambo_room", ({ id, username, gameMode}) => {   
+          socket.on("create_jambo_room", ({ id, username, gameMode}) => {
             const userExists = userId.includes(id);
             const socketRooms = Array.from(socket.rooms.values()).filter(
                 (r) => r !== socket.id);
@@ -264,7 +279,7 @@ export interface SocketIOInstance extends SocketIOServer {
             }  
               const roomName = Math.random().toString(36).substring(2, 7); 
               if (!rooms[roomName]) {
-                rooms[roomName] = { owner: username, gameMode, roomName };
+                rooms[roomName] = { owner: username, userId: id, gameMode, roomName };
                 userId.push(id);
                 socket.join(roomName);
                 console.log(`${username} created room: ${roomName}`);
@@ -300,8 +315,22 @@ export interface SocketIOInstance extends SocketIOServer {
             }
             userId.push(id);
             socket.join(roomName);
-            socket.to(roomName).emit("game_start", { id: socket.id, opponentUsername: username, gameMode: rooms[roomName].gameMode, roomName });
-            socket.emit("game_start", { id: socket.id , opponentUsername: rooms[roomName].owner, gameMode: rooms[roomName].gameMode, roomName });
+            // socket.to(roomName).emit("game_start", { id: socket.id, opponentUsername: username, gameMode: rooms[roomName].gameMode, roomName });
+            // socket.emit("game_start", { id: socket.id , opponentUsername: rooms[roomName].owner, gameMode: rooms[roomName].gameMode, roomName });
+            io.to(roomName).emit("game_start", {
+                player1Id: socket.id,
+                roomName,
+                gameMode: rooms[roomName].gameMode,
+                player1Username: username,
+                player2Username: rooms[roomName].owner,
+                // userIdOne: id,
+                // userIdTwo: rooms[roomName].userId
+                });
+            socket.to(roomName).emit("register_match", {userIdOne: id, userIdTwo: rooms[roomName].userId, stake: rooms[roomName].gameMode});
+            socket.on("match_id", ({id}) => {
+                console.log("mactch id", id);
+                socket.to(roomName).emit("match_id", {id});
+            });
             delete rooms[roomName]; // Remove room after game starts (optional)
             socket.on("disconnect", () => {
                 userId.splice(userId.indexOf(id), 1);
