@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
-const paymentController = require("../controllers/paymentController");
+const paymentController = require("../controllers/monetbilController");
 
-router.post("/", paymentController.requestToPay);
+router.post("/", paymentController.monetbilPayment);
 
 module.exports = router;
