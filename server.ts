@@ -99,7 +99,7 @@ function onListening() {
 
   io = createSocketIOServer(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: process.env.DOMAIN,
     }
   });
 }

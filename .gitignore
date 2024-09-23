@@ -30,7 +30,7 @@ tmp/
 
 # Environment variables
 .env*  # Matches all files starting with .env (e.g., .env, .env.development, .env.production)
-
+.env
 # Editor drafts and back-ups (optional)
 *.swp
 *.swo
