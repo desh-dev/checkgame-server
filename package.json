@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "test": "nodemon server.ts",
-    "build": "npm run clean && npm install && npm run complie",
-    "clean": "rimraf dist",
+    "build": "npm install && npm run complie",
     "start": "node dist/server.js",
     "complie": "tsc"
   },
