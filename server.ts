@@ -9,8 +9,6 @@ var debug = require("debug")("socketio-server:server");
 import * as http from "http";
 import { SocketIOInstance, createSocketIOServer } from "./socket.io";
 
-
-
 /**
  * Get port from environment and store in Express.
  */
@@ -24,8 +22,6 @@ app.set("port", port);
 
 var server = http.createServer(app);
 
-
-
 /**
  * Listen on provided port, on all network interfaces.
  */
@@ -36,9 +32,6 @@ server.on("listening", onListening);
 
 let io: SocketIOInstance;
 //socket functionality
-
-
-
 
 /**
  * Normalize a port into a number, string, or false.
@@ -99,7 +92,13 @@ function onListening() {
 
   io = createSocketIOServer(server, {
     cors: {
-      origin: process.env.DOMAIN,
-    }
+      origin: "http://localhost:5173",
+    },
+    connectionStateRecovery: {
+      // the backup duration of the sessions and the packets
+      maxDisconnectionDuration: 30 * 1000,
+      // whether to skip middlewares upon successful recovery
+      skipMiddlewares: true,
+    },
   });
 }
