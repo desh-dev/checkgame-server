@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "test": "nodemon server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js"
+    "build": "npm run clean && npm install && npm run complie",
+    "clean": "rimraf dist",
+    "start": "node dist/server.js",
+    "complie": "tsc"
   },
   "dependencies": {
     "axios": "^1.7.2",
