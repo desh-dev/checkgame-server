@@ -4,17 +4,17 @@
  * Module dependencies.
  */
 
-import app from "./app";
-var debug = require("debug")("socketio-server:server");
-import * as http from "http";
-import { SocketIOInstance, createSocketIOServer } from "./socket.io";
+import app from './app';
+var debug = require('debug')('socketio-server:server');
+import * as http from 'http';
+import { SocketIOInstance, createSocketIOServer } from './socket.io';
 
 /**
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || "9000");
-app.set("port", port);
+var port = normalizePort(process.env.PORT || '9000');
+app.set('port', port);
 
 /**
  * Create HTTP server.
@@ -27,8 +27,8 @@ var server = http.createServer(app);
  */
 
 server.listen(port);
-server.on("error", onError);
-server.on("listening", onListening);
+server.on('error', onError);
+server.on('listening', onListening);
 
 let io: SocketIOInstance;
 //socket functionality
@@ -58,20 +58,20 @@ function normalizePort(val: any) {
  */
 
 function onError(error: any) {
-  if (error.syscall !== "listen") {
+  if (error.syscall !== 'listen') {
     throw error;
   }
 
-  var bind = typeof port === "string" ? "Pipe " + port : "Port " + port;
+  var bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
-    case "EACCES":
-      console.error(bind + " requires elevated privileges");
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
       process.exit(1);
       break;
-    case "EADDRINUSE":
-      console.error(bind + " is already in use");
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
       process.exit(1);
       break;
     default:
@@ -85,14 +85,14 @@ function onError(error: any) {
 
 function onListening() {
   var addr = server.address();
-  var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr?.port;
-  debug("Listening on " + bind);
+  var bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr?.port;
+  debug('Listening on ' + bind);
 
-  console.log("Server Running on Port: ", port);
+  console.log('Server Running on Port: ', port);
 
   io = createSocketIOServer(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: process.env.DOMAIN || 'http://localhost:5173',
     },
     connectionStateRecovery: {
       // the backup duration of the sessions and the packets
