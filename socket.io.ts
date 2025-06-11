@@ -299,7 +299,7 @@ export const createSocketIOServer = (
         players[player2].gameMode = '';
         // delete players[player1]; // Remove game mode from players object after match
         // delete players[player2];
-        usersId.splice(usersId.indexOf(id), 1);
+        // usersId.splice(usersId.indexOf(id), 1);
 
         const roomName = Math.random().toString(36).substring(2, 7);
         players[player1].roomName = roomName;
@@ -436,6 +436,12 @@ export const createSocketIOServer = (
       socket.on('game_lost', () => {
         io.to(roomName).except(socket.id).emit('game_lost');
       });
+      socket.on('leave_room', ({ roomName }) => {
+        socket.leave(roomName);
+        io.sockets.adapter.rooms.delete(roomName);
+        delete rooms[roomName];
+        usersId.splice(usersId.indexOf(id), 1);
+      });
 
       socket.on('disconnect', (reason) => {
         if (reason === 'ping timeout') {
@@ -473,8 +479,13 @@ export const createSocketIOServer = (
       const socketRooms = Array.from(socket.rooms.values()).filter(
         (r) => r !== socket.id
       );
+      const connectedSockets = io.sockets.adapter.rooms.get(roomName);
       if (socketRooms.length > 0 || userExists) {
         socket.emit('error', { message: 'Already in a room' });
+        return;
+      }
+      if (connectedSockets && connectedSockets.size === 2) {
+        socket.emit('error', { message: 'Room is full' });
         return;
       }
       if (!rooms[roomName]) {
@@ -507,7 +518,13 @@ export const createSocketIOServer = (
       socket.on('game_lost', () => {
         io.to(roomName).except(socket.id).emit('game_lost');
       });
-
+      delete rooms[roomName]; //check if this is needed
+      socket.on('leave_room', ({ roomName }) => {
+        socket.leave(roomName);
+        io.sockets.adapter.rooms.delete(roomName);
+        delete rooms[roomName];
+        usersId.splice(usersId.indexOf(id), 1);
+      });
       socket.on('disconnect', (reason) => {
         if (reason === 'ping timeout') {
           io.to(roomName).except(socket.id).emit('room_left');
